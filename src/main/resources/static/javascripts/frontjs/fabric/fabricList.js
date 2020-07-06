@@ -11,7 +11,7 @@ var dataTable = $('#dataTable').DataTable({
     pageLength: 20,
     buttons: [],
     ajax: {
-        "url": "/service/ajaxServiceEventList",
+        "url": "/fabric/ajaxList",
         "type": "POST",
         "data": function (d) {
             d.searchField = $("#searchField").val();
@@ -20,6 +20,7 @@ var dataTable = $('#dataTable').DataTable({
         },
         dataSrc: "data",
         complete: function (data) {
+            console.log(data);
             $('#totalCount').text(JSON.stringify(data.responseJSON.recordsTotal));
             $('#selectAll').prop("checked", false);
             bRunning = true;
@@ -28,79 +29,52 @@ var dataTable = $('#dataTable').DataTable({
     "columns": [{
         data: ''
     }, {
-        data: ''
+        data: 'seq'
+    },{
+        data: 'fabricNo'
     }, {
-        data: ''
+        data: 'fabricName'
     }, {
-        data: ''
+        data: 'registerName'
     }, {
-        data: 'EVENT_STATUS_NAME'
-    }, {
-        data: 'USE_YN'
-    }, {
-        data: 'REG_DTIME'
-    }, {
-        data: ''
-    }, {
-        data: 'EVENT_WIN_DATE'
+        data: 'registerDate'
     }],
     columnDefs: [{
             targets: 0,
-            'render': function (data, type, row, meta) {
+            render: function (data, type, row, meta) {
 
                 var html = '<div class="checkbox checkbox-css">';
-                html += '    <input type="checkbox" value="' + row.EVENT_SEQ + '" id="serviceEventList_checkbox_' + meta.row + '" name="checkkey" />';
-                html += '    <label for="serviceEventList_checkbox_' + meta.row + '">&nbsp;</label>';
+                html += '    <input type="checkbox" value="' + row.seq + '" id="fabricList_checkbox_' + meta.row + '" name="checkKey" />';
+                html += '    <label for="fabricList_checkbox_' + meta.row + '">&nbsp;</label>';
                 html += '</div>';
 
                 return html;
             }
-        },
-        {
-            targets: 1,
-            'render': function (data, type, row, meta) {
-                var info = dataTable.page.info();
-                return info.recordsTotal - (info.page * info.length + meta.row);
-            }
-        },
-        {
+        }, {
             targets: 2,
-            'render': function (data, type, row, meta) {
-
-                return "<a href='/service/serviceEventDetail?eventSeq=" + row.EVENT_SEQ + "' data-toggle='ajax'>" + row.EVENT_NAME + "</a>";
+            className: 'dt-body-center',
+            selector: 'td',
+            render: function (data, type, row, meta) {
+                return '<a href="#/fabric/detail?seq=' + row.seq + '">' + row.fabricNo + '</a>';
             }
-        },
-        {
+        }, {
             targets: 3,
-            'render': function (data, type, row, meta) {
-
-                return row.EVENT_START_DATE + " ~ " + row.EVENT_FINISH_DATE;
+            className: 'dt-body-center',
+            selector: 'td',
+            render: function (data, type, row, meta) {
+                return '<a href="#/fabric/detail?seq=' + row.seq + '">' + row.fabricName + '</a>';
             }
         },
         {
-            targets: 7,
-            'render': function (data, type, row, meta) {
-                if (isEmpty(row.EVENT_WIN_CONTENTS)) {
-                    return "<a href='/service/serviceEventWinner?eventSeq=" + row.EVENT_SEQ + "' data-toggle='ajax'>" + "[작성]" + "</a>";
-                } else {
-                    return "<a href='/service/serviceEventWinner?eventSeq=" + row.EVENT_SEQ + "' data-toggle='ajax'>" + "[수정]" + "</a>";
-                }
-            }
-        },
-        {
-            'targets': [2],
-            'className': 'dt-body-left'
-        },
-        {
-            'targets': [0, 1, 3, 4, 5, 6, 7, 8],
-            'className': 'dt-body-center'
+            targets: [0, 1, 4, 5],
+            className: 'dt-body-center'
         }
     ]
 });
 
 $(document).ready(function () {
 
-    dataTable.settings()[0].oLanguage.sEmptyTable = '등록된 이벤트가 없습니다.';
+    dataTable.settings()[0].oLanguage.sEmptyTable = '등록된 원단이 없습니다.';
 
     //input X버튼
     var $ipt = $('#searchKeyword'),
@@ -152,16 +126,16 @@ $(document).ready(function () {
 
 });
 
-function removeServiceEvent() {
+function removeFabric() {
 
     if ($('#totalCount').text() === '0') {
         return false;
     }
-
-    if ($('input:checkbox[name=checkkey]:checked').length < 1) {
+    
+    if ($('input:checkbox[name=checkKey]:checked').length < 1) {
         swal({
-            title: '선택된 이벤트가 없습니다.',
-            text: '삭제할 이벤트를 선택해주세요.',
+            title: '선택된 원단이 없습니다.',
+            text: '삭제할 원단을 선택해주세요.',
             icon: 'info',
             buttons: {
                 confirm: {
@@ -198,21 +172,21 @@ function removeServiceEvent() {
         }
     }).then(function (isConfirm) {
         if (isConfirm) {
-            var eventSeqs = [];
+            var fabricSeqs = [];
 
-            $('input:checkbox[name=checkkey]:checked').each(function () {
-                eventSeqs.push($(this).val());
+            $('input:checkbox[name=checkKey]:checked').each(function () {
+                fabricSeqs.push($(this).val());
             });
 
             $.ajax({
                 type: "POST",
-                url: "/service/removeServiceEvent",
-                data: "eventSeqs=" + eventSeqs,
+                url: "/fabric/ajaxRemove",
+                data: "fabricSeqs=" + fabricSeqs,
                 success: function (data) {
 
                     if (Number(data.successCount) < 1) {
                         swal({
-                            title: '이벤트 삭제에 실패했습니다.',
+                            title: ' 삭제에 실패했습니다.',
                             text: '',
                             icon: 'error',
                             buttons: {
@@ -228,7 +202,7 @@ function removeServiceEvent() {
                         return false;
                     }
                     swal({
-                        title: '선택하신 이벤트를 삭제했습니다.',
+                        title: '선택하신 원단을 삭제했습니다.',
                         text: '',
                         icon: 'success',
                         buttons: {
@@ -246,7 +220,7 @@ function removeServiceEvent() {
                 },
                 error: function (data) {
                     swal({
-                        title: '이벤트 삭제에 실패했습니다.',
+                        title: '원단 삭제에 실패했습니다.',
                         text: '',
                         icon: 'error',
                         buttons: {
@@ -265,6 +239,4 @@ function removeServiceEvent() {
             });
         }
     });
-
-
-}
+};
